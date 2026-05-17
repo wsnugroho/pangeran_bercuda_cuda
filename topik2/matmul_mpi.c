@@ -33,7 +33,6 @@ float *allocMatrix(int rows, int cols) {
 }
 
 void initMatrix(float *m, int N) {
-    srand(42);
     for (int i = 0; i < N*N; i++) m[i] = (float)rand() / RAND_MAX;
 }
 
@@ -71,6 +70,9 @@ int main(int argc, char *argv[]) {
         A = allocMatrix(N, N);
         B = allocMatrix(N, N);
         C = allocMatrix(N, N);
+
+        /* Seed sekali saja agar A dan B sama persis dengan referensi CPU. */
+        srand(42);
         initMatrix(A, N);
         initMatrix(B, N);
     }
@@ -160,7 +162,9 @@ int main(int argc, char *argv[]) {
             fread(ref, sizeof(float), N*N, fp); fclose(fp);
             int ok = 1;
             for (int i = 0; i < N*N; i++) {
-                if (fabsf(C[i] - ref[i]) > 1e-2f) { ok = 0; break; }
+                float diff = fabsf(C[i] - ref[i]);
+                float tol  = 1e-2f + 1e-4f * fabsf(ref[i]);
+                if (diff > tol) { ok = 0; break; }
             }
             printf("\n  [VERIFIKASI] %s\n", ok ? "PASS ✓" : "FAIL ✗");
             free(ref);

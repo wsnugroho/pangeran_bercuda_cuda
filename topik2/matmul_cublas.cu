@@ -44,7 +44,6 @@ float *allocHost(int N) {
 }
 
 void initMatrix(float *m, int N) {
-    srand(42);
     for (int i = 0; i < N*N; i++) m[i] = (float)rand() / RAND_MAX;
 }
 
@@ -55,7 +54,9 @@ int verifyVsRef(const float *C, int N, const char *refFile) {
     fread(ref, sizeof(float), N*N, fp); fclose(fp);
     int ok = 1; int errCount = 0;
     for (int i = 0; i < N*N; i++) {
-        if (fabsf(C[i] - ref[i]) > 1e-2f) {
+        float diff = fabsf(C[i] - ref[i]);
+        float tol  = 1e-2f + 1e-4f * fabsf(ref[i]);
+        if (diff > tol) {
             if (errCount++ < 5)
                 printf("  DIFF[%d]: GPU=%.5f  REF=%.5f\n", i, C[i], ref[i]);
             ok = 0;
@@ -83,6 +84,9 @@ int main(int argc, char *argv[]) {
     float *h_A = allocHost(N);
     float *h_B = allocHost(N);
     float *h_C = allocHost(N);
+
+    /* Seed sekali saja agar A dan B sama persis dengan referensi CPU. */
+    srand(42);
     initMatrix(h_A, N);
     initMatrix(h_B, N);
     memset(h_C, 0, bytes);

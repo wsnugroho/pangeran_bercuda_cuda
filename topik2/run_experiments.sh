@@ -17,10 +17,17 @@ echo "==================================================" | tee -a $LOG
 # ──────────────────────────────────────────
 echo -e "\n[KOMPILASI]" | tee -a $LOG
 
+echo -e "\n[SETUP CUDA LIBRARY PATH]" | tee -a $LOG
+if [ -f ./setup_cuda_libpath.sh ]; then
+    source ./setup_cuda_libpath.sh > .cuda_setup.log 2>&1
+    cat .cuda_setup.log | tee -a $LOG
+fi
+
 gcc  -O2 -o matmul_seq    matmul_sequential.c -lm && echo "  ✓ matmul_seq" | tee -a $LOG
 nvcc -O2 -allow-unsupported-compiler -o matmul_basic  matmul_cuda_basic.cu     && echo "  ✓ matmul_basic" | tee -a $LOG
 nvcc -O2 -allow-unsupported-compiler -o matmul_shared matmul_cuda_shared.cu    && echo "  ✓ matmul_shared" | tee -a $LOG
 nvcc -O2 -allow-unsupported-compiler -o matmul_cublas matmul_cublas.cu -lcublas && echo "  ✓ matmul_cublas" | tee -a $LOG
+ldd ./matmul_cublas | grep -E 'cublas|not found' | tee -a $LOG
 mpicc -O2 -o matmul_mpi   matmul_mpi.c -lm         && echo "  ✓ matmul_mpi" | tee -a $LOG
 
 # ──────────────────────────────────────────
@@ -76,7 +83,7 @@ echo -e "\n[E] MPI MULTICORE" | tee -a $LOG
 for N in $SIZES; do
     for NP in 8 16; do
         echo -e "\n  --- N=$N  NP=$NP ---" | tee -a $LOG
-        mpirun -np $NP ./matmul_mpi $N | tee -a $LOG
+        mpirun --allow-run-as-root -np $NP ./matmul_mpi $N | tee -a $LOG
     done
 done
 
